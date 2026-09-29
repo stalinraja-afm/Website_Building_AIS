@@ -1,0 +1,1286 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>OpsMind — Learn DevOps and AI, together</title>
+<meta name="description" content="OpsMind is a community for learning DevOps and AI engineering through weekly workshops, real pipelines, and people who ship." />
+<link rel="icon" type="image/png" href="brand_assets/opsmind_logo.png" />
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy-950:#0A1826;
+    --navy-900:#0D1F30;
+    --navy-800:#102942;
+    --navy-700:#16324F;
+    --navy-600:#1D3E5E;
+    --teal-400:#34D6A6;
+    --teal-300:#5EE2BC;
+    --cyan-400:#33D9F2;
+    --cyan-300:#6FE7F7;
+    --mist-300:#9FB2C4;
+    --mist-200:#C9D6E2;
+    --white-050:#F3F8FC;
+  }
+  *{ -webkit-tap-highlight-color: transparent; }
+  html{ scroll-behavior:smooth; }
+  body{
+    background:var(--navy-950);
+    color:var(--mist-200);
+    font-family:'Inter',system-ui,sans-serif;
+    line-height:1.7;
+  }
+  .font-display{ font-family:'Space Grotesk',system-ui,sans-serif; letter-spacing:-0.03em; }
+  .font-mono{ font-family:'JetBrains Mono',ui-monospace,monospace; }
+
+  ::selection{ background:var(--teal-400); color:var(--navy-950); }
+
+  /* Dotted surface: two dot fields at different scales read as depth,
+     masked so the texture never competes with the copy on top of it. */
+  .bg-dots::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    z-index:0;
+    pointer-events:none;
+    background-image:
+      radial-gradient(circle, rgba(94,226,188,0.30) 1.1px, transparent 1.6px),
+      radial-gradient(circle, rgba(51,217,242,0.14) 1px, transparent 1.5px);
+    background-size: 34px 34px, 68px 68px;
+    background-position: 0 0, 17px 17px;
+    -webkit-mask-image: radial-gradient(ellipse 85% 70% at 50% 8%, #000 35%, transparent 100%);
+    mask-image: radial-gradient(ellipse 85% 70% at 50% 8%, #000 35%, transparent 100%);
+  }
+
+  #bg-canvas{
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0.62) 50%, rgba(0,0,0,0.35) 100%);
+    mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0.62) 50%, rgba(0,0,0,0.35) 100%);
+  }
+  body > section, body > footer{ position: relative; z-index: 1; }
+  /* Keep anchored headings clear of the sticky header. */
+  section[id]{ scroll-margin-top: 104px; }
+
+  .noise::before{
+    content:"";
+    position:absolute; inset:0;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.045'/%3E%3C/svg%3E");
+    pointer-events:none;
+    mix-blend-mode:overlay;
+  }
+
+  .glow-teal{ box-shadow: 0 0 0 1px rgba(52,214,166,0.18), 0 8px 24px -8px rgba(52,214,166,0.35), 0 24px 48px -24px rgba(33,217,242,0.25); }
+  .glow-cyan{ box-shadow: 0 0 0 1px rgba(51,217,242,0.18), 0 8px 24px -8px rgba(51,217,242,0.3); }
+
+  /* Surfaces separate from the page by their own lightness, not by outlines.
+     Two shadows: a tight one for definition, a large soft one for depth. */
+  .card-elevated{
+    background: linear-gradient(180deg, var(--navy-700), var(--navy-800));
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.07),
+      0 1px 2px rgba(2,8,15,0.55),
+      0 18px 36px -18px rgba(2,8,15,0.9);
+  }
+  .surface-sunken{ background: linear-gradient(180deg, var(--navy-900), var(--navy-950)); }
+
+  .tabular{ font-variant-numeric: tabular-nums; }
+
+  .btn-primary{
+    background: linear-gradient(90deg, var(--teal-400), var(--cyan-400));
+    color: var(--navy-950);
+    box-shadow: 0 0 0 1px rgba(52,214,166,0.3), 0 10px 30px -10px rgba(52,214,166,0.55);
+    transition: transform 220ms cubic-bezier(0.16,1,0.3,1), box-shadow 220ms cubic-bezier(0.16,1,0.3,1);
+  }
+  .btn-primary:hover{ transform: translateY(-1px); box-shadow: 0 0 0 1px rgba(52,214,166,0.45), 0 16px 40px -12px rgba(52,214,166,0.65); }
+  .btn-primary:active{ transform: translateY(0px) scale(0.98); }
+  .btn-primary:focus-visible{ outline: 2px solid var(--white-050); outline-offset: 3px; }
+
+  /* The nav CTA is always on screen, so it yields to the hero's primary action. */
+  .btn-primary.btn-quiet{ box-shadow: 0 0 0 1px rgba(52,214,166,0.25), 0 4px 12px -6px rgba(52,214,166,0.4); }
+  .btn-primary.btn-quiet:hover{ box-shadow: 0 0 0 1px rgba(52,214,166,0.4), 0 8px 20px -8px rgba(52,214,166,0.55); }
+
+  .btn-ghost{
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(159,178,196,0.22);
+    color: var(--white-050);
+    transition: transform 220ms cubic-bezier(0.16,1,0.3,1), border-color 220ms ease, background 220ms ease;
+  }
+  .btn-ghost:hover{ border-color: rgba(51,217,242,0.5); background: rgba(51,217,242,0.06); transform: translateY(-1px); }
+  .btn-ghost:active{ transform: translateY(0px) scale(0.98); }
+  .btn-ghost:focus-visible{ outline: 2px solid var(--cyan-400); outline-offset: 3px; }
+
+  a.nav-link{ position:relative; color: var(--mist-200); transition: color 200ms ease; }
+  a.nav-link:hover{ color: var(--white-050); }
+  a.nav-link:focus-visible{ outline: 2px solid var(--cyan-400); outline-offset: 4px; border-radius: 4px; }
+  a.nav-link::after{
+    content:""; position:absolute; left:0; right:100%; bottom:-4px; height:1px;
+    background: linear-gradient(90deg, var(--teal-400), var(--cyan-400));
+    transition: right 240ms cubic-bezier(0.16,1,0.3,1);
+  }
+  a.nav-link:hover::after{ right:0; }
+
+  .track-card{ position: relative; transition: transform 260ms cubic-bezier(0.16,1,0.3,1), box-shadow 260ms cubic-bezier(0.16,1,0.3,1); }
+  .track-card:hover{
+    transform: translateY(-4px);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.1),
+      0 1px 2px rgba(2,8,15,0.55),
+      0 28px 50px -20px rgba(2,8,15,0.95);
+  }
+
+  .term-line{ opacity:0; animation: reveal 420ms ease forwards; }
+  .term-caret{ display:inline-block; width:7px; height:15px; background:var(--teal-300); margin-left:2px; vertical-align:-2px; animation: blink 1s steps(1) infinite; }
+  @keyframes reveal{ to{ opacity:1; } }
+  @keyframes blink{ 50%{ opacity:0; } }
+
+  @media (prefers-reduced-motion: reduce){
+    html{ scroll-behavior:auto; }
+    .term-line{ animation: none; opacity:1; }
+    .term-caret{ animation: none; }
+    .btn-primary, .btn-ghost, .track-card, a.nav-link::after{ transition: none; }
+  }
+
+  .divider-fade{ background: linear-gradient(90deg, transparent, rgba(159,178,196,0.25), transparent); height:1px; }
+
+  .step-num{
+    position: relative;
+    z-index: 1;
+    font-family:'JetBrains Mono',monospace;
+    background:
+      linear-gradient(180deg, rgba(52,214,166,0.16), rgba(51,217,242,0.06)),
+      var(--navy-950);
+    border: 1px solid rgba(52,214,166,0.3);
+    color: var(--teal-300);
+  }
+
+  /* A check reads as "included" far faster than a generic bullet. */
+  ul.check li{ position:relative; padding-left:1.75rem; }
+  ul.check li::before{
+    content:""; position:absolute; left:0; top:0.45em; width:15px; height:15px;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%2334D6A6' stroke-width='2.1' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 8.5l3.2 3.2L13 5'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;
+  }
+
+  /* Tool chips. Cyan marks the AI & automation half of the curriculum. */
+  .chip{
+    font-family:'JetBrains Mono',monospace;
+    font-size: 11.5px;
+    line-height: 1.5;
+    padding: 3px 9px;
+    border-radius: 6px;
+    background: rgba(201,214,226,0.07);
+    color: var(--mist-200);
+    white-space: nowrap;
+  }
+  .chip-ai{ background: rgba(51,217,242,0.11); color: var(--cyan-300); }
+
+  /* Logo wall. Each mark is the SVG used as a mask, so it can be filled with
+     the brand gradient on hover instead of its own (often unreadable) colour. */
+  .logo-wall{
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0,1fr));
+    gap: 30px 16px;
+  }
+  @media (min-width: 1024px){ .logo-wall{ grid-template-columns: repeat(8, minmax(0,1fr)); } }
+
+  .logo-item{ text-align: center; }
+  .logo-mark{
+    position: relative;
+    display: block;
+    width: 30px;
+    height: 30px;
+    margin: 0 auto;
+    transition: transform 300ms cubic-bezier(0.16,1,0.3,1);
+  }
+  .logo-mark::before,
+  .logo-mark::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    -webkit-mask-image: var(--icon);
+    mask-image: var(--icon);
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
+    transition: opacity 300ms ease;
+  }
+  .logo-mark::before{ background: var(--mist-200); opacity: 0.62; }
+  .logo-mark::after{
+    background: linear-gradient(135deg, var(--teal-400), var(--cyan-400));
+    opacity: 0;
+  }
+  .logo-name{
+    display: block;
+    margin-top: 10px;
+    font-family:'JetBrains Mono',monospace;
+    font-size: 10.5px;
+    line-height: 1.45;
+    color: var(--mist-300);
+    transition: color 300ms ease;
+  }
+
+  .logo-item:hover .logo-mark{ transform: translateY(-5px) scale(1.12); }
+  .logo-item:hover .logo-mark::before{ opacity: 0; }
+  .logo-item:hover .logo-mark::after{ opacity: 1; }
+  .logo-item:hover .logo-name{ color: var(--white-050); }
+
+  @media (prefers-reduced-motion: reduce){
+    .logo-mark, .logo-mark::before, .logo-mark::after, .logo-name{ transition: none; }
+    .logo-item:hover .logo-mark{ transform: none; }
+  }
+
+  .tool-card{ transition: transform 220ms cubic-bezier(0.16,1,0.3,1), box-shadow 220ms cubic-bezier(0.16,1,0.3,1); }
+  .tool-card:hover{
+    transform: translateY(-3px);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.1),
+      0 1px 2px rgba(2,8,15,0.55),
+      0 22px 40px -18px rgba(2,8,15,0.95);
+  }
+
+  /* Pipeline stages sit on a rail, because a pipeline is a sequence. */
+  .flow-rail{ position:relative; }
+  @media (min-width: 640px){
+    .flow-rail::before{
+      content:""; position:absolute; left:6%; right:6%; top:50%; height:1px;
+      background: linear-gradient(90deg, rgba(52,214,166,0.4), rgba(51,217,242,0.4));
+    }
+  }
+  .flow-stage{ position:relative; z-index:1; }
+
+  @media (prefers-reduced-motion: reduce){
+    .tool-card{ transition: none; }
+  }
+
+  /* --- Demo assistant --- */
+  .chat-launcher{
+    position: fixed; right: 20px; bottom: 20px; z-index: 60;
+    transition: transform 240ms cubic-bezier(0.16,1,0.3,1), box-shadow 240ms cubic-bezier(0.16,1,0.3,1);
+  }
+  .chat-launcher:hover{ transform: translateY(-2px); }
+  .chat-launcher:active{ transform: translateY(0) scale(0.97); }
+  .chat-launcher:focus-visible{ outline: 2px solid var(--white-050); outline-offset: 3px; }
+
+  .chat-panel{
+    position: fixed; right: 20px; bottom: 88px; z-index: 60;
+    width: min(380px, calc(100vw - 40px));
+    opacity: 0; visibility: hidden;
+    transform: translateY(14px) scale(0.98);
+    transform-origin: bottom right;
+    transition: transform 280ms cubic-bezier(0.16,1,0.3,1), opacity 200ms ease, visibility 0s linear 280ms;
+  }
+  .chat-panel.open{
+    opacity: 1; visibility: visible;
+    transform: translateY(0) scale(1);
+    transition: transform 280ms cubic-bezier(0.16,1,0.3,1), opacity 200ms ease, visibility 0s;
+  }
+  .chat-log{ max-height: 320px; overflow-y: auto; scrollbar-width: thin; }
+  .chat-bubble{ max-width: 85%; padding: 9px 12px; border-radius: 12px; font-size: 13.5px; line-height: 1.6; }
+  .chat-bot{ background: rgba(201,214,226,0.08); color: var(--mist-200); border-bottom-left-radius: 4px; }
+  .chat-user{
+    background: linear-gradient(135deg, rgba(52,214,166,0.22), rgba(51,217,242,0.16));
+    color: var(--white-050); margin-left: auto; border-bottom-right-radius: 4px;
+  }
+  .chat-suggest{
+    font-family:'JetBrains Mono',monospace; font-size: 11px; padding: 4px 9px; border-radius: 6px;
+    background: rgba(51,217,242,0.10); color: var(--cyan-300);
+    transition: transform 200ms cubic-bezier(0.16,1,0.3,1), background 200ms ease;
+  }
+  .chat-suggest:hover{ background: rgba(51,217,242,0.2); transform: translateY(-1px); }
+  .chat-suggest:active{ transform: translateY(0) scale(0.97); }
+  .chat-suggest:focus-visible{ outline: 2px solid var(--cyan-400); outline-offset: 2px; }
+
+  .chat-input{ background: rgba(2,8,15,0.5); color: var(--white-050); }
+  .chat-input::placeholder{ color: var(--mist-300); }
+  .chat-input:focus-visible{ outline: 2px solid var(--cyan-400); outline-offset: -1px; }
+  .chat-send{ transition: transform 200ms cubic-bezier(0.16,1,0.3,1), opacity 200ms ease; }
+  .chat-send:hover{ transform: translateY(-1px); }
+  .chat-send:active{ transform: translateY(0) scale(0.96); }
+  .chat-send:focus-visible{ outline: 2px solid var(--cyan-400); outline-offset: 2px; }
+
+  .typing span{
+    display:inline-block; width:5px; height:5px; border-radius:50%;
+    background: var(--mist-300); margin-right:3px;
+    animation: bounce 1.1s infinite ease-in-out;
+  }
+  .typing span:nth-child(2){ animation-delay: .15s; }
+  .typing span:nth-child(3){ animation-delay: .3s; }
+  @keyframes bounce{ 0%,80%,100%{ opacity:.3; } 40%{ opacity:1; } }
+
+  @media (prefers-reduced-motion: reduce){
+    .chat-launcher, .chat-panel, .chat-suggest, .chat-send{ transition: none; }
+    .typing span{ animation: none; opacity:.6; }
+  }
+
+  .track-icon{
+    background: linear-gradient(180deg, rgba(52,214,166,0.16), rgba(51,217,242,0.05));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+  }
+
+  /* The steps are a real sequence, so the rail encodes that. */
+  .step-rail{ position:relative; }
+  @media (min-width: 768px){
+    .step-rail::before{
+      content:""; position:absolute; left:0; right:0; top:20px; height:1px;
+      background: linear-gradient(90deg, rgba(52,214,166,0.45), rgba(51,217,242,0.28), transparent);
+    }
+  }
+  .step-item{ position:relative; }
+
+  details.faq summary{
+    transition: color 200ms ease;
+    border-radius: 8px;
+  }
+  details.faq summary:hover{ color: var(--cyan-300); }
+  details.faq summary:focus-visible{ outline: 2px solid var(--cyan-400); outline-offset: 6px; }
+  details.faq summary:active{ color: var(--teal-300); }
+  details.faq summary::-webkit-details-marker{ display:none; }
+  .faq-sign{ transition: transform 260ms cubic-bezier(0.16,1,0.3,1); }
+  details.faq[open] .faq-sign{ transform: rotate(45deg); }
+  @media (prefers-reduced-motion: reduce){
+    .faq-sign, details.faq summary{ transition: none; }
+  }
+</style>
+</head>
+<body class="antialiased">
+
+<canvas id="bg-canvas" aria-hidden="true"></canvas>
+
+<!-- NAV -->
+<header class="sticky top-0 z-50 backdrop-blur bg-[#0A1826]/80 border-b border-white/[0.06]">
+  <div class="max-w-6xl mx-auto px-6 flex items-center justify-between h-20">
+    <a href="#top" class="flex items-center gap-2.5">
+      <img src="brand_assets/opsmind_logo.png" alt="OpsMind" class="h-14 w-auto object-contain" style="filter: drop-shadow(0 0 12px rgba(51,217,242,0.25));" />
+    </a>
+    <nav class="hidden md:flex items-center gap-8 text-[15px]">
+      <a href="#tracks" class="nav-link">Curriculum</a>
+      <a href="#toolchain" class="nav-link">Toolchain</a>
+      <a href="#how" class="nav-link">How it works</a>
+      <a href="#community" class="nav-link">Community</a>
+      <a href="#faq" class="nav-link">FAQ</a>
+    </nav>
+    <a href="#join" class="btn-primary btn-quiet inline-flex items-center gap-2 rounded-full px-4 sm:px-5 py-2.5 text-sm font-semibold font-display">
+      Join OpsMind
+    </a>
+  </div>
+</header>
+
+<!-- HERO -->
+<section id="top" class="relative overflow-hidden bg-dots">
+  <div class="noise absolute inset-0"></div>
+  <div class="absolute -top-40 -left-32 w-[560px] h-[560px] rounded-full opacity-30 blur-3xl" style="background: radial-gradient(circle, rgba(52,214,166,0.35), transparent 65%);"></div>
+  <div class="absolute -top-20 right-0 w-[480px] h-[480px] rounded-full opacity-25 blur-3xl" style="background: radial-gradient(circle, rgba(51,217,242,0.35), transparent 65%);"></div>
+
+  <div class="relative max-w-6xl mx-auto px-6 pt-20 pb-24 md:pt-28 md:pb-32 grid md:grid-cols-[1.1fr,0.9fr] gap-16 items-center">
+    <div>
+      <h1 class="font-display text-[2.75rem] leading-[1.05] sm:text-6xl font-semibold text-white-050" style="color:var(--white-050)">
+        Learn DevOps and AI by shipping real pipelines, not watching slides.
+      </h1>
+      <p class="mt-6 text-lg max-w-[52ch]" style="color:var(--mist-300)">
+        OpsMind is a hands-on community where engineers pair up on weekly builds — CI/CD, infrastructure, and applied AI — and get unstuck by people who've deployed it before.
+      </p>
+      <div class="mt-9 flex flex-wrap items-center gap-4">
+        <a href="#join" class="btn-primary inline-flex items-center rounded-full px-7 py-3.5 font-display font-semibold">
+          Join the next cohort
+        </a>
+        <a href="#tracks" class="btn-ghost inline-flex items-center rounded-full px-7 py-3.5 font-display font-semibold">
+          See the curriculum
+        </a>
+      </div>
+      <div class="mt-10 flex items-center gap-3 text-sm" style="color:var(--mist-300)">
+        <div class="flex -space-x-2.5">
+          <img src="https://placehold.co/40x40/16324F/34D6A6?text=J" class="w-8 h-8 rounded-full border-2" style="border-color:var(--navy-950)" alt="" />
+          <img src="https://placehold.co/40x40/102942/33D9F2?text=P" class="w-8 h-8 rounded-full border-2" style="border-color:var(--navy-950)" alt="" />
+          <img src="https://placehold.co/40x40/16324F/34D6A6?text=T" class="w-8 h-8 rounded-full border-2" style="border-color:var(--navy-950)" alt="" />
+        </div>
+        <span>Built with engineers from small teams to platform orgs</span>
+      </div>
+    </div>
+
+    <div class="relative pb-10">
+      <div class="card-elevated glow-teal rounded-2xl p-5 font-mono text-[13px] leading-relaxed">
+        <div class="flex items-center gap-1.5 pb-3 mb-3 border-b border-white/[0.06]">
+          <span class="w-2.5 h-2.5 rounded-full bg-[#5C6B7A]"></span>
+          <span class="w-2.5 h-2.5 rounded-full bg-[#5C6B7A]"></span>
+          <span class="w-2.5 h-2.5 rounded-full bg-[#5C6B7A]"></span>
+          <span class="ml-3" style="color:var(--mist-300)">deploy.yml — week 4, DevOps track</span>
+        </div>
+        <div class="space-y-1.5">
+          <p class="term-line" style="animation-delay:.1s"><span style="color:var(--teal-300)">$</span> opsmind run pipeline --track devops</p>
+          <p class="term-line" style="animation-delay:.5s; color:var(--mist-300)">→ building container image…</p>
+          <p class="term-line" style="animation-delay:.9s; color:var(--mist-300)">→ running test suite (42 passed)</p>
+          <p class="term-line" style="animation-delay:1.3s; color:var(--mist-300)">→ provisioning staging environment</p>
+          <p class="term-line" style="animation-delay:1.7s;"><span style="color:var(--teal-300)">✓</span> deployed to staging in 2m 14s</p>
+          <p class="term-line" style="animation-delay:2.1s; color:var(--cyan-300)">reviewer: "clean rollback plan — ship it"<span class="term-caret"></span></p>
+        </div>
+      </div>
+      <div class="absolute -bottom-6 -left-6 hidden sm:block card-elevated glow-cyan rounded-xl px-4 py-3 font-mono text-xs">
+        <span style="color:var(--mist-300)">uptime</span>
+        <span class="block text-lg font-semibold" style="color:var(--cyan-300)">99.94%</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PROOF STRIP -->
+<section class="surface-sunken">
+  <div class="max-w-6xl mx-auto px-6 py-12 grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-10">
+    <div>
+      <p class="font-display tabular text-3xl font-semibold" style="color:var(--white-050)">1,200+</p>
+      <p class="font-mono text-xs mt-1.5" style="color:var(--mist-300)">members learning weekly</p>
+    </div>
+    <div>
+      <p class="font-display tabular text-3xl font-semibold" style="color:var(--white-050)">40+</p>
+      <p class="font-mono text-xs mt-1.5" style="color:var(--mist-300)">live workshops run</p>
+    </div>
+    <div>
+      <p class="font-display tabular text-3xl font-semibold" style="color:var(--white-050)">70+</p>
+      <p class="font-mono text-xs mt-1.5" style="color:var(--mist-300)">tools across 3 tracks</p>
+    </div>
+    <div>
+      <p class="font-display tabular text-3xl font-semibold" style="color:var(--white-050)">6 weeks</p>
+      <p class="font-mono text-xs mt-1.5" style="color:var(--mist-300)">to your first deploy</p>
+    </div>
+  </div>
+</section>
+
+<!-- TRACKS -->
+<section id="tracks" class="max-w-6xl mx-auto px-6 py-20 md:py-24">
+  <div class="max-w-[60ch]">
+    <h2 class="font-display text-3xl sm:text-4xl font-semibold" style="color:var(--white-050)">What you'll learn</h2>
+    <p class="mt-4 text-base" style="color:var(--mist-300)">Three tracks, taught in parallel by people running these systems in production. Pick one to start, or move between them as your interests shift.</p>
+  </div>
+
+  <div class="mt-12 grid md:grid-cols-3 gap-6">
+    <div class="track-card card-elevated rounded-2xl p-7 overflow-hidden">
+      <div class="absolute inset-x-0 top-0 h-[2px]" style="background:linear-gradient(90deg, var(--teal-400), rgba(52,214,166,0));"></div>
+      <span class="track-icon inline-flex items-center justify-center w-11 h-11 rounded-xl">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#34D6A6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 2.5 20 7v10l-8 4.5L4 17V7z"/><path d="M4 7l8 4.5L20 7"/><path d="M12 11.5V21.5"/>
+        </svg>
+      </span>
+      <h3 class="font-display text-xl font-semibold mt-5" style="color:var(--white-050)">DevOps Foundations</h3>
+      <p class="mt-2.5 text-sm" style="color:var(--mist-300)">Build and break real CI/CD pipelines: containers, infrastructure as code, and rollbacks that actually work under pressure.</p>
+      <ul class="check mt-5 space-y-2.5 text-sm" style="color:var(--mist-200)">
+        <li>Git, GitHub Actions, and Jenkins</li>
+        <li>Docker and Kubernetes in production</li>
+        <li>Zero-downtime deploys with Argo CD</li>
+      </ul>
+    </div>
+
+    <div class="track-card card-elevated rounded-2xl p-7 overflow-hidden">
+      <div class="absolute inset-x-0 top-0 h-[2px]" style="background:linear-gradient(90deg, var(--cyan-400), rgba(51,217,242,0));"></div>
+      <span class="track-icon inline-flex items-center justify-center w-11 h-11 rounded-xl">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#33D9F2" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="5" r="2.1"/><circle cx="5" cy="17" r="2.1"/><circle cx="19" cy="17" r="2.1"/>
+          <path d="M10.4 6.6 6.4 15M13.6 6.6l4 8.4M7.1 17h9.8"/>
+        </svg>
+      </span>
+      <h3 class="font-display text-xl font-semibold mt-5" style="color:var(--white-050)">AI Engineering</h3>
+      <p class="mt-2.5 text-sm" style="color:var(--mist-300)">Move past prompt tinkering into systems: evals, retrieval, and the plumbing that keeps models reliable in production.</p>
+      <ul class="check mt-5 space-y-2.5 text-sm" style="color:var(--mist-200)">
+        <li>Automations in n8n and Airflow</li>
+        <li>RAG, agents, and tool calling</li>
+        <li>Evals with Ragas and Promptfoo</li>
+      </ul>
+    </div>
+
+    <div class="track-card card-elevated rounded-2xl p-7 overflow-hidden">
+      <div class="absolute inset-x-0 top-0 h-[2px]" style="background:linear-gradient(90deg, var(--teal-300), rgba(94,226,188,0));"></div>
+      <span class="track-icon inline-flex items-center justify-center w-11 h-11 rounded-xl">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#5EE2BC" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="3" y="4" width="18" height="6" rx="1.6"/><rect x="3" y="14" width="18" height="6" rx="1.6"/>
+          <path d="M6.6 7h.01M6.6 17h.01"/>
+        </svg>
+      </span>
+      <h3 class="font-display text-xl font-semibold mt-5" style="color:var(--white-050)">Cloud &amp; Infrastructure</h3>
+      <p class="mt-2.5 text-sm" style="color:var(--mist-300)">Design systems that hold up: observability, cost control, and incident response for the infrastructure underneath it all.</p>
+      <ul class="check mt-5 space-y-2.5 text-sm" style="color:var(--mist-200)">
+        <li>Terraform and Ansible on real infra</li>
+        <li>Prometheus, Grafana, and the ELK stack</li>
+        <li>Secrets with Vault and SOPS</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- TOOLCHAIN -->
+<section id="toolchain" class="surface-sunken">
+  <div class="max-w-6xl mx-auto px-6 py-20 md:py-24">
+    <div class="max-w-[62ch]">
+      <h2 class="font-display text-3xl sm:text-4xl font-semibold" style="color:var(--white-050)">Every tool you'll actually touch</h2>
+      <p class="mt-4 text-base" style="color:var(--mist-300)">The full curriculum, grouped the way the work is grouped. You won't use all of it — nobody does — but you'll know what each piece is for and when to reach for it.</p>
+    </div>
+
+    <div class="logo-wall mt-12">
+      <div class="logo-item">
+        <span class="logo-mark" style="--icon:url(https://cdn.simpleicons.org/git)"></span>
+        <span class="logo-name">Git</span>
+      </div>
+      <div class="logo-item">
+        <span class="logo-mark" style="--icon:url(https://cdn.simpleicons.org/github)"></span>
+        <span class="logo-name">GitHub</span>
+      </div>
+      <div class="logo-item">
+        <span class="logo-mark" style="--icon:url(https://cdn.simpleicons.org/gitlab)"></span>
+        <span class="logo-name">GitLab</span>
+      </div>
+      <div class="logo-item">
+        <span class="logo-mark" style="--icon:url(https://cdn.simpleicons.org/docker)"></span>
+        <span class="logo-name">Docker</span>
+      </div>
+      <div class="logo-item">
+        <span class="logo-mark" style="--icon:url(https://cdn.simpleicons.org/kubernetes)"></span>
+        <span class="logo-name">Kubernetes</span>
+      </div>
+      <div class="logo-item">
+        <span class="logo-mark" style="--icon:url(https://cdn.simpleicons.org/redhatopenshift)"></span>
+        <span class="logo-name">OpenShift</span>
+      </div>
+      <div class="logo-item">
+        <span class="logo-mark" style="--icon:url(https://cdn.simpleicons.org/jenkins)"></span>
+        <span class="logo-name">Jenkins</span>
+      </div>
+      <div class="logo-item">
+        <span class="logo-mark" style="--icon:url(https://cdn.simpleicons.org/githubactions)"></span>
+        <span class="logo-name">GitHub Actions</span>
+      </div>
+      <div class="logo-item">
+        <span class="logo-mark" style="--icon:url(https://cdn.simpleicons.org/argo)"></span>
+        <span class="logo-name">Argo CD</span>
+      </div>
+      <div class="logo-item">
+        <span class="logo-mark" style="--icon:url(https://cdn.simpleicons.org/terraform)"></span>
+        <span class="logo-name">Terraform</span>
+      </div>
+      <div class="logo-item">
+        <span class="logo-mark" style="--icon:url(https://cdn.simpleicons.org/ansible)"></span>
+        <span class="logo-name">Ansible</span>
+      </div>
+      <div class="logo-item">
+        <span class="logo-mark" style="--icon:url(https://cdn.simpleicons.org/pulumi)"></span>
+        <span class="logo-name">Pulumi</span>
+      </div>
+      <div class="logo-item">
+        <span class="logo-mark" style="--icon:url(https://cdn.simpleicons.org/vault)"></span>
+        <span class="logo-name">Vault</span>
+      </div>
+      <div class="logo-item">
+        <span class="logo-mark" style="--icon:url(https://cdn.simpleicons.org/prometheus)"></span>
+        <span class="logo-name">Prometheus</span>
+      </div>
+      <div class="logo-item">
+        <span class="logo-mark" style="--icon:url(https://cdn.simpleicons.org/grafana)"></span>
+        <span class="logo-name">Grafana</span>
+      </div>
+      <div class="logo-item">
+        <span class="logo-mark" style="--icon:url(https://cdn.simpleicons.org/elasticsearch)"></span>
+        <span class="logo-name">Elasticsearch</span>
+      </div>
+      <div class="logo-item">
+        <span class="logo-mark" style="--icon:url(https://cdn.simpleicons.org/kibana)"></span>
+        <span class="logo-name">Kibana</span>
+      </div>
+      <div class="logo-item">
+        <span class="logo-mark" style="--icon:url(https://cdn.simpleicons.org/nginx)"></span>
+        <span class="logo-name">Nginx</span>
+      </div>
+      <div class="logo-item">
+        <span class="logo-mark" style="--icon:url(https://cdn.simpleicons.org/apachekafka)"></span>
+        <span class="logo-name">Kafka</span>
+      </div>
+      <div class="logo-item">
+        <span class="logo-mark" style="--icon:url(https://cdn.simpleicons.org/apacheairflow)"></span>
+        <span class="logo-name">Airflow</span>
+      </div>
+      <div class="logo-item">
+        <span class="logo-mark" style="--icon:url(https://cdn.simpleicons.org/npm)"></span>
+        <span class="logo-name">npm</span>
+      </div>
+      <div class="logo-item">
+        <span class="logo-mark" style="--icon:url(https://cdn.simpleicons.org/apachemaven)"></span>
+        <span class="logo-name">Maven</span>
+      </div>
+      <div class="logo-item">
+        <span class="logo-mark" style="--icon:url(https://cdn.simpleicons.org/gradle)"></span>
+        <span class="logo-name">Gradle</span>
+      </div>
+      <div class="logo-item">
+        <span class="logo-mark" style="--icon:url(https://cdn.simpleicons.org/selenium)"></span>
+        <span class="logo-name">Selenium</span>
+      </div>
+      <div class="logo-item">
+        <span class="logo-mark" style="--icon:url(https://cdn.simpleicons.org/cypress)"></span>
+        <span class="logo-name">Cypress</span>
+      </div>
+      <div class="logo-item">
+        <span class="logo-mark" style="--icon:url(https://cdn.simpleicons.org/sonarqubeserver)"></span>
+        <span class="logo-name">SonarQube</span>
+      </div>
+      <div class="logo-item">
+        <span class="logo-mark" style="--icon:url(https://cdn.simpleicons.org/jira)"></span>
+        <span class="logo-name">Jira</span>
+      </div>
+      <div class="logo-item">
+        <span class="logo-mark" style="--icon:url(https://cdn.simpleicons.org/trivy)"></span>
+        <span class="logo-name">Trivy</span>
+      </div>
+      <div class="logo-item">
+        <span class="logo-mark" style="--icon:url(https://cdn.simpleicons.org/n8n)"></span>
+        <span class="logo-name">n8n</span>
+      </div>
+      <div class="logo-item">
+        <span class="logo-mark" style="--icon:url(https://cdn.simpleicons.org/claude)"></span>
+        <span class="logo-name">Claude</span>
+      </div>
+      <div class="logo-item">
+        <span class="logo-mark" style="--icon:url(https://cdn.simpleicons.org/langchain)"></span>
+        <span class="logo-name">LangChain</span>
+      </div>
+      <div class="logo-item">
+        <span class="logo-mark" style="--icon:url(https://cdn.simpleicons.org/ollama)"></span>
+        <span class="logo-name">Ollama</span>
+      </div>
+    </div>
+
+    <!-- Group: DevOps & delivery -->
+    <div class="mt-14">
+      <div class="flex items-center gap-3">
+        <span class="w-2.5 h-2.5 rounded-full" style="background:var(--teal-400)"></span>
+        <h3 class="font-display text-xl font-semibold" style="color:var(--white-050)">Build and ship it</h3>
+      </div>
+      <div class="mt-6 grid sm:grid-cols-2 lg:grid-cols-3 gap-5 items-start">
+        <div class="tool-card card-elevated rounded-xl p-5">
+          <h4 class="font-display text-[15px] font-semibold" style="color:var(--white-050)">Source control</h4>
+          <ul class="mt-3 flex flex-wrap gap-1.5">
+            <li class="chip">Git</li><li class="chip">GitHub</li><li class="chip">GitLab</li><li class="chip">Bitbucket</li>
+          </ul>
+        </div>
+        <div class="tool-card card-elevated rounded-xl p-5">
+          <h4 class="font-display text-[15px] font-semibold" style="color:var(--white-050)">Build &amp; package</h4>
+          <ul class="mt-3 flex flex-wrap gap-1.5">
+            <li class="chip">Maven</li><li class="chip">Gradle</li><li class="chip">npm</li><li class="chip">Docker</li><li class="chip">Artifactory</li>
+          </ul>
+        </div>
+        <div class="tool-card card-elevated rounded-xl p-5">
+          <h4 class="font-display text-[15px] font-semibold" style="color:var(--white-050)">CI/CD</h4>
+          <ul class="mt-3 flex flex-wrap gap-1.5">
+            <li class="chip">Jenkins</li><li class="chip">GitHub Actions</li><li class="chip">GitLab CI</li><li class="chip">Azure DevOps</li><li class="chip">Argo CD</li>
+          </ul>
+        </div>
+        <div class="tool-card card-elevated rounded-xl p-5">
+          <h4 class="font-display text-[15px] font-semibold" style="color:var(--white-050)">Containers &amp; orchestration</h4>
+          <ul class="mt-3 flex flex-wrap gap-1.5">
+            <li class="chip">Docker</li><li class="chip">Kubernetes</li><li class="chip">Helm</li><li class="chip">OpenShift</li>
+          </ul>
+        </div>
+        <div class="tool-card card-elevated rounded-xl p-5">
+          <h4 class="font-display text-[15px] font-semibold" style="color:var(--white-050)">Testing &amp; quality</h4>
+          <ul class="mt-3 flex flex-wrap gap-1.5">
+            <li class="chip">Selenium</li><li class="chip">JUnit</li><li class="chip">Cypress</li><li class="chip">JMeter</li><li class="chip">SonarQube</li>
+          </ul>
+        </div>
+        <div class="tool-card card-elevated rounded-xl p-5">
+          <h4 class="font-display text-[15px] font-semibold" style="color:var(--white-050)">Collaboration &amp; ITSM</h4>
+          <ul class="mt-3 flex flex-wrap gap-1.5">
+            <li class="chip">Jira</li><li class="chip">Confluence</li><li class="chip">Slack</li><li class="chip">Teams</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Group: Cloud & platform -->
+    <div class="mt-14">
+      <div class="flex items-center gap-3">
+        <span class="w-2.5 h-2.5 rounded-full" style="background:var(--teal-300)"></span>
+        <h3 class="font-display text-xl font-semibold" style="color:var(--white-050)">Run it in production</h3>
+      </div>
+      <div class="mt-6 grid sm:grid-cols-2 lg:grid-cols-3 gap-5 items-start">
+        <div class="tool-card card-elevated rounded-xl p-5">
+          <h4 class="font-display text-[15px] font-semibold" style="color:var(--white-050)">Cloud providers</h4>
+          <ul class="mt-3 flex flex-wrap gap-1.5">
+            <li class="chip">AWS</li><li class="chip">Azure</li><li class="chip">Google Cloud</li>
+          </ul>
+        </div>
+        <div class="tool-card card-elevated rounded-xl p-5">
+          <h4 class="font-display text-[15px] font-semibold" style="color:var(--white-050)">Infrastructure as code</h4>
+          <ul class="mt-3 flex flex-wrap gap-1.5">
+            <li class="chip">Terraform</li><li class="chip">Ansible</li><li class="chip">CloudFormation</li><li class="chip">Pulumi</li>
+          </ul>
+        </div>
+        <div class="tool-card card-elevated rounded-xl p-5">
+          <h4 class="font-display text-[15px] font-semibold" style="color:var(--white-050)">Config &amp; secrets</h4>
+          <ul class="mt-3 flex flex-wrap gap-1.5">
+            <li class="chip">Vault</li><li class="chip">AWS Secrets Manager</li><li class="chip">SOPS</li><li class="chip">ConfigMaps</li>
+          </ul>
+        </div>
+        <div class="tool-card card-elevated rounded-xl p-5">
+          <h4 class="font-display text-[15px] font-semibold" style="color:var(--white-050)">Monitoring &amp; logging</h4>
+          <ul class="mt-3 flex flex-wrap gap-1.5">
+            <li class="chip">Prometheus</li><li class="chip">Grafana</li><li class="chip">Elasticsearch</li><li class="chip">Kibana</li><li class="chip">Loki</li>
+          </ul>
+        </div>
+        <div class="tool-card card-elevated rounded-xl p-5">
+          <h4 class="font-display text-[15px] font-semibold" style="color:var(--white-050)">Security &amp; compliance</h4>
+          <ul class="mt-3 flex flex-wrap gap-1.5">
+            <li class="chip">Trivy</li><li class="chip">Checkov</li><li class="chip">OWASP ZAP</li>
+          </ul>
+        </div>
+        <div class="tool-card card-elevated rounded-xl p-5">
+          <h4 class="font-display text-[15px] font-semibold" style="color:var(--white-050)">Platform &amp; data</h4>
+          <ul class="mt-3 flex flex-wrap gap-1.5">
+            <li class="chip">Nginx</li><li class="chip">Kafka</li><li class="chip">Airflow</li><li class="chip">Argo Workflows</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Group: AI & automation -->
+    <div class="mt-14">
+      <div class="flex items-center gap-3">
+        <span class="w-2.5 h-2.5 rounded-full" style="background:var(--cyan-400)"></span>
+        <h3 class="font-display text-xl font-semibold" style="color:var(--white-050)">Automate it with AI</h3>
+      </div>
+      <p class="mt-2 text-sm max-w-[60ch]" style="color:var(--mist-300)">The half most DevOps curricula skip. Same engineering discipline, applied to models and agents.</p>
+      <div class="mt-6 grid sm:grid-cols-2 lg:grid-cols-3 gap-5 items-start">
+        <div class="tool-card card-elevated rounded-xl p-5">
+          <h4 class="font-display text-[15px] font-semibold" style="color:var(--white-050)">Workflow automation</h4>
+          <ul class="mt-3 flex flex-wrap gap-1.5">
+            <li class="chip chip-ai">n8n</li><li class="chip chip-ai">Make</li><li class="chip chip-ai">Zapier</li><li class="chip chip-ai">Airflow</li>
+          </ul>
+        </div>
+        <div class="tool-card card-elevated rounded-xl p-5">
+          <h4 class="font-display text-[15px] font-semibold" style="color:var(--white-050)">LLM engineering</h4>
+          <ul class="mt-3 flex flex-wrap gap-1.5">
+            <li class="chip chip-ai">Claude API</li><li class="chip chip-ai">OpenAI API</li><li class="chip chip-ai">LangChain</li><li class="chip chip-ai">LlamaIndex</li>
+          </ul>
+        </div>
+        <div class="tool-card card-elevated rounded-xl p-5">
+          <h4 class="font-display text-[15px] font-semibold" style="color:var(--white-050)">RAG &amp; vector search</h4>
+          <ul class="mt-3 flex flex-wrap gap-1.5">
+            <li class="chip chip-ai">pgvector</li><li class="chip chip-ai">Pinecone</li><li class="chip chip-ai">Weaviate</li><li class="chip chip-ai">Chroma</li>
+          </ul>
+        </div>
+        <div class="tool-card card-elevated rounded-xl p-5">
+          <h4 class="font-display text-[15px] font-semibold" style="color:var(--white-050)">Agents &amp; tool calling</h4>
+          <ul class="mt-3 flex flex-wrap gap-1.5">
+            <li class="chip chip-ai">LangGraph</li><li class="chip chip-ai">CrewAI</li><li class="chip chip-ai">MCP</li><li class="chip chip-ai">Claude Code</li>
+          </ul>
+        </div>
+        <div class="tool-card card-elevated rounded-xl p-5">
+          <h4 class="font-display text-[15px] font-semibold" style="color:var(--white-050)">MLOps &amp; serving</h4>
+          <ul class="mt-3 flex flex-wrap gap-1.5">
+            <li class="chip chip-ai">MLflow</li><li class="chip chip-ai">Kubeflow</li><li class="chip chip-ai">Ollama</li><li class="chip chip-ai">vLLM</li>
+          </ul>
+        </div>
+        <div class="tool-card card-elevated rounded-xl p-5">
+          <h4 class="font-display text-[15px] font-semibold" style="color:var(--white-050)">Evals &amp; AIOps</h4>
+          <ul class="mt-3 flex flex-wrap gap-1.5">
+            <li class="chip chip-ai">Ragas</li><li class="chip chip-ai">Promptfoo</li><li class="chip chip-ai">Langfuse</li><li class="chip chip-ai">AI log triage</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PIPELINE FLOW -->
+<section id="pipeline" class="max-w-6xl mx-auto px-6 py-20 md:py-24">
+  <div class="max-w-[62ch]">
+    <h2 class="font-display text-3xl sm:text-4xl font-semibold" style="color:var(--white-050)">How the pieces connect</h2>
+    <p class="mt-4 text-base" style="color:var(--mist-300)">By the end of your track you'll have built this end to end — one commit moving all the way to production, with the AI steps doing the review nobody has time for.</p>
+  </div>
+
+  <div class="mt-12 space-y-6">
+    <div class="flow-rail grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div class="flow-stage card-elevated rounded-xl px-4 py-4 text-center">
+        <p class="font-display text-sm font-semibold" style="color:var(--white-050)">Code</p>
+        <p class="font-mono text-[11.5px] mt-1.5" style="color:var(--teal-300)">GitHub</p>
+      </div>
+      <div class="flow-stage card-elevated rounded-xl px-4 py-4 text-center">
+        <p class="font-display text-sm font-semibold" style="color:var(--white-050)">Build</p>
+        <p class="font-mono text-[11.5px] mt-1.5" style="color:var(--teal-300)">Maven</p>
+      </div>
+      <div class="flow-stage card-elevated rounded-xl px-4 py-4 text-center">
+        <p class="font-display text-sm font-semibold" style="color:var(--white-050)">Test</p>
+        <p class="font-mono text-[11.5px] mt-1.5" style="color:var(--teal-300)">JUnit · Cypress</p>
+      </div>
+      <div class="flow-stage card-elevated rounded-xl px-4 py-4 text-center">
+        <p class="font-display text-sm font-semibold" style="color:var(--white-050)">Analyze</p>
+        <p class="font-mono text-[11.5px] mt-1.5" style="color:var(--teal-300)">SonarQube</p>
+      </div>
+    </div>
+
+    <div class="flow-rail grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div class="flow-stage card-elevated rounded-xl px-4 py-4 text-center">
+        <p class="font-display text-sm font-semibold" style="color:var(--white-050)">Package</p>
+        <p class="font-mono text-[11.5px] mt-1.5" style="color:var(--cyan-300)">Docker</p>
+      </div>
+      <div class="flow-stage card-elevated rounded-xl px-4 py-4 text-center">
+        <p class="font-display text-sm font-semibold" style="color:var(--white-050)">Deploy</p>
+        <p class="font-mono text-[11.5px] mt-1.5" style="color:var(--cyan-300)">Kubernetes · Helm</p>
+      </div>
+      <div class="flow-stage card-elevated rounded-xl px-4 py-4 text-center">
+        <p class="font-display text-sm font-semibold" style="color:var(--white-050)">Observe</p>
+        <p class="font-mono text-[11.5px] mt-1.5" style="color:var(--cyan-300)">Grafana · Loki</p>
+      </div>
+      <div class="flow-stage card-elevated rounded-xl px-4 py-4 text-center">
+        <p class="font-display text-sm font-semibold" style="color:var(--white-050)">Notify</p>
+        <p class="font-mono text-[11.5px] mt-1.5" style="color:var(--cyan-300)">Slack · n8n</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how" class="max-w-6xl mx-auto px-6 py-20 md:py-24">
+  <div class="max-w-[60ch]">
+    <h2 class="font-display text-3xl sm:text-4xl font-semibold" style="color:var(--white-050)">How a cohort runs</h2>
+    <p class="mt-4 text-base" style="color:var(--mist-300)">Four steps, repeated every week, from your first session to your first production deploy.</p>
+  </div>
+
+  <div class="step-rail mt-14 grid md:grid-cols-4 gap-x-8 gap-y-10">
+    <div class="step-item">
+      <span class="step-num inline-flex items-center justify-center w-10 h-10 rounded-lg text-sm">01</span>
+      <h3 class="font-display text-lg font-semibold mt-4" style="color:var(--white-050)">Join a track</h3>
+      <p class="mt-2 text-sm max-w-[34ch]" style="color:var(--mist-300)">Pick DevOps, AI Engineering, or Cloud &amp; Infra, and get matched into a small working group.</p>
+    </div>
+    <div class="step-item">
+      <span class="step-num inline-flex items-center justify-center w-10 h-10 rounded-lg text-sm">02</span>
+      <h3 class="font-display text-lg font-semibold mt-4" style="color:var(--white-050)">Learn live</h3>
+      <p class="mt-2 text-sm max-w-[34ch]" style="color:var(--mist-300)">Attend a weekly workshop taught by a practitioner, with the session recorded for later.</p>
+    </div>
+    <div class="step-item">
+      <span class="step-num inline-flex items-center justify-center w-10 h-10 rounded-lg text-sm">03</span>
+      <h3 class="font-display text-lg font-semibold mt-4" style="color:var(--white-050)">Build with a partner</h3>
+      <p class="mt-2 text-sm max-w-[34ch]" style="color:var(--mist-300)">Apply what you learned to a real project, paired with someone at a similar stage.</p>
+    </div>
+    <div class="step-item">
+      <span class="step-num inline-flex items-center justify-center w-10 h-10 rounded-lg text-sm">04</span>
+      <h3 class="font-display text-lg font-semibold mt-4" style="color:var(--white-050)">Ship &amp; get reviewed</h3>
+      <p class="mt-2 text-sm max-w-[34ch]" style="color:var(--mist-300)">Deploy your work and get it reviewed by a mentor before you move to the next module.</p>
+    </div>
+  </div>
+</section>
+
+<!-- COMMUNITY / PROOF -->
+<section id="community" class="relative overflow-hidden">
+  <div class="absolute inset-0 opacity-40" style="background: radial-gradient(ellipse at top, rgba(52,214,166,0.08), transparent 60%);"></div>
+  <div class="relative max-w-6xl mx-auto px-6 py-20 md:py-24 grid md:grid-cols-[1fr,0.85fr] gap-14 items-start">
+    <div>
+      <h2 class="font-display text-3xl sm:text-4xl font-semibold" style="color:var(--white-050)">Built by people who got unstuck here</h2>
+      <div class="mt-10 card-elevated rounded-2xl p-7">
+        <p class="text-lg" style="color:var(--white-050)">"I'd read about Terraform for months. I shipped my first real infrastructure change in week two, with someone reviewing the plan before I ran it."</p>
+        <div class="mt-5 flex items-center gap-3">
+          <img src="https://placehold.co/44x44/16324F/33D9F2?text=RA" class="w-11 h-11 rounded-full" alt="" />
+          <div class="text-sm">
+            <p class="font-medium" style="color:var(--white-050)">Riya A.</p>
+            <p style="color:var(--mist-300)">DevOps Foundations, cohort 3</p>
+          </div>
+        </div>
+      </div>
+      <div class="mt-6 card-elevated rounded-2xl p-7">
+        <p class="text-lg" style="color:var(--white-050)">"The AI Engineering track is the first place that treated evals as seriously as the model itself. Changed how I ship."</p>
+        <div class="mt-5 flex items-center gap-3">
+          <img src="https://placehold.co/44x44/102942/34D6A6?text=DM" class="w-11 h-11 rounded-full" alt="" />
+          <div class="text-sm">
+            <p class="font-medium" style="color:var(--white-050)">Daniel M.</p>
+            <p style="color:var(--mist-300)">AI Engineering, cohort 2</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-elevated glow-cyan rounded-2xl p-7 sticky top-28">
+      <p class="font-mono text-xs" style="color:var(--mist-300)">next live workshop</p>
+      <h3 class="font-display text-xl font-semibold mt-2" style="color:var(--white-050)">Debugging a broken CI pipeline, live</h3>
+      <p class="mt-3 text-sm" style="color:var(--mist-300)">A real pipeline, a real failure, fixed on screen with the whole cohort watching and asking questions.</p>
+      <div class="mt-5 flex items-center justify-between text-sm font-mono" style="color:var(--mist-200)">
+        <span>Thursday · 6:00 PM</span>
+        <span style="color:var(--teal-300)">free to attend</span>
+      </div>
+      <a href="#join" class="btn-primary mt-6 w-full inline-flex justify-center items-center rounded-full px-6 py-3 font-display font-semibold">
+        Save your seat
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section id="faq" class="max-w-6xl mx-auto px-6 py-20 md:py-24">
+  <h2 class="font-display text-3xl sm:text-4xl font-semibold" style="color:var(--white-050)">Questions people ask before joining</h2>
+  <div class="mt-10 divide-y divide-white/[0.06]">
+    <details class="faq py-6">
+      <summary class="flex items-center justify-between gap-6 cursor-pointer list-none font-display text-lg font-medium" style="color:var(--white-050)">
+        Do I need DevOps or AI experience already?
+        <span class="faq-sign shrink-0 text-2xl leading-none" style="color:var(--teal-300)">+</span>
+      </summary>
+      <p class="mt-3 max-w-[65ch] text-sm" style="color:var(--mist-300)">No. Each track starts from working fundamentals and moves at the pace of your cohort. You'll need basic comfort with the command line and one programming language.</p>
+    </details>
+    <details class="faq py-6">
+      <summary class="flex items-center justify-between gap-6 cursor-pointer list-none font-display text-lg font-medium" style="color:var(--white-050)">
+        How much time does a cohort take each week?
+        <span class="faq-sign shrink-0 text-2xl leading-none" style="color:var(--teal-300)">+</span>
+      </summary>
+      <p class="mt-3 max-w-[65ch] text-sm" style="color:var(--mist-300)">Plan for one 90-minute workshop and 3–4 hours of paired build time. Workshops are recorded, so a missed week won't put you behind.</p>
+    </details>
+    <details class="faq py-6">
+      <summary class="flex items-center justify-between gap-6 cursor-pointer list-none font-display text-lg font-medium" style="color:var(--white-050)">
+        Is OpsMind free to join?
+        <span class="faq-sign shrink-0 text-2xl leading-none" style="color:var(--teal-300)">+</span>
+      </summary>
+      <p class="mt-3 max-w-[65ch] text-sm" style="color:var(--mist-300)">Yes. Workshops and community access are free. Some deep-dive cohorts with live mentor review are limited in size to keep feedback fast.</p>
+    </details>
+  </div>
+</section>
+
+<!-- CLOSING CTA -->
+<section id="join" class="relative overflow-hidden">
+  <div class="absolute inset-0" style="background: linear-gradient(135deg, rgba(52,214,166,0.12), rgba(51,217,242,0.08));"></div>
+  <div class="relative max-w-6xl mx-auto px-6 py-20 md:py-24 text-center">
+    <h2 class="font-display text-3xl sm:text-5xl font-semibold max-w-[22ch] mx-auto" style="color:var(--white-050)">Your next pipeline could be a production one.</h2>
+    <p class="mt-5 max-w-[52ch] mx-auto" style="color:var(--mist-300)">Join OpsMind and get matched into a working group before the next cohort starts.</p>
+    <div class="mt-9 flex flex-wrap justify-center gap-4">
+      <a href="#" class="btn-primary inline-flex items-center rounded-full px-8 py-4 font-display font-semibold text-base">
+        Join the community
+      </a>
+      <a href="#tracks" class="btn-ghost inline-flex items-center rounded-full px-8 py-4 font-display font-semibold text-base">
+        Compare tracks
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="border-t border-white/[0.06]">
+  <div class="max-w-6xl mx-auto px-6 py-14 flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
+    <img src="brand_assets/opsmind_logo.png" alt="OpsMind" class="h-11 w-auto object-contain opacity-90" />
+    <nav class="flex flex-wrap gap-x-8 gap-y-3 text-sm">
+      <a href="#tracks" class="nav-link">Curriculum</a>
+      <a href="#toolchain" class="nav-link">Toolchain</a>
+      <a href="#how" class="nav-link">How it works</a>
+      <a href="#community" class="nav-link">Community</a>
+      <a href="#faq" class="nav-link">FAQ</a>
+    </nav>
+    <p class="text-sm font-mono" style="color:var(--mist-300)">© 2026 OpsMind. Built by the community it teaches.</p>
+  </div>
+</footer>
+
+<!-- DEMO ASSISTANT -->
+<button id="chat-launcher" class="chat-launcher btn-primary rounded-full w-14 h-14 inline-flex items-center justify-center"
+        aria-expanded="false" aria-controls="chat-panel" aria-label="Open the OpsMind assistant demo">
+  <svg id="chat-icon-open" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9.5 9.5 0 0 1-2.8-.4L4 21l1.4-4.1A8.2 8.2 0 0 1 3.6 11.5a8.4 8.4 0 0 1 9-8.4 8.4 8.4 0 0 1 8.4 8.4z"/>
+  </svg>
+  <svg id="chat-icon-close" class="hidden" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+    <path d="M6 6l12 12M18 6L6 18"/>
+  </svg>
+</button>
+
+<div id="chat-panel" class="chat-panel card-elevated rounded-2xl overflow-hidden" role="dialog" aria-modal="false" aria-label="OpsMind assistant demo">
+  <div class="flex items-center justify-between gap-3 px-4 py-3" style="border-bottom:1px solid rgba(255,255,255,0.07)">
+    <div class="flex items-center gap-2.5">
+      <span class="w-2 h-2 rounded-full" style="background:var(--teal-400)"></span>
+      <p class="font-display text-sm font-semibold" style="color:var(--white-050)">OpsMind assistant</p>
+      <span class="font-mono text-[10px] px-1.5 py-0.5 rounded" style="background:rgba(201,214,226,0.1); color:var(--mist-300)">demo</span>
+    </div>
+    <button id="chat-close" class="chat-send rounded p-1" aria-label="Close the assistant">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9FB2C4" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+        <path d="M6 6l12 12M18 6L6 18"/>
+      </svg>
+    </button>
+  </div>
+
+  <div id="chat-log" class="chat-log px-4 py-4 flex flex-col gap-3" aria-live="polite">
+    <div class="chat-bubble chat-bot">Hi — I answer from a fixed script, not a live model. Ask about tracks, tools, time commitment, or cost.</div>
+  </div>
+
+  <div id="chat-suggestions" class="px-4 pb-3 flex flex-wrap gap-1.5">
+    <button class="chat-suggest" type="button">Which tracks can I join?</button>
+    <button class="chat-suggest" type="button">What AI tools do you cover?</button>
+    <button class="chat-suggest" type="button">How much time per week?</button>
+    <button class="chat-suggest" type="button">Is it free?</button>
+  </div>
+
+  <form id="chat-form" class="flex items-center gap-2 px-3 py-3" style="border-top:1px solid rgba(255,255,255,0.07)">
+    <label for="chat-input" class="sr-only">Message the assistant</label>
+    <input id="chat-input" class="chat-input flex-1 rounded-lg px-3 py-2 text-sm" type="text"
+           placeholder="Ask about the curriculum…" autocomplete="off" />
+    <button type="submit" class="chat-send btn-primary btn-quiet rounded-lg px-3 py-2 inline-flex items-center" aria-label="Send message">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M4 12h15M13 6l6 6-6 6"/>
+      </svg>
+    </button>
+  </form>
+</div>
+
+<script>
+(() => {
+  const launcher = document.getElementById('chat-launcher');
+  const panel = document.getElementById('chat-panel');
+  const closeBtn = document.getElementById('chat-close');
+  const log = document.getElementById('chat-log');
+  const form = document.getElementById('chat-form');
+  const input = document.getElementById('chat-input');
+  const iconOpen = document.getElementById('chat-icon-open');
+  const iconClose = document.getElementById('chat-icon-close');
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Scripted answers only — this panel never calls a model.
+  const SCRIPT = [
+    { keys: ['track', 'course', 'curriculum', 'learn'],
+      reply: 'Three tracks run in parallel: DevOps Foundations, AI Engineering, and Cloud & Infrastructure. You pick one to start and can move between them.' },
+    { keys: ['ai', 'llm', 'agent', 'rag', 'n8n', 'automation', 'model'],
+      reply: 'The AI half covers workflow automation (n8n, Make, Airflow), LLM engineering (Claude and OpenAI APIs, LangChain), RAG with pgvector and Pinecone, agents via LangGraph and MCP, MLOps with MLflow and Ollama, plus evals with Ragas and Promptfoo.' },
+    { keys: ['time', 'hour', 'week', 'commit', 'long'],
+      reply: 'Plan for one 90-minute workshop plus 3–4 hours of paired build time each week. Workshops are recorded, so missing one will not put you behind.' },
+    { keys: ['free', 'cost', 'price', 'pay', 'fee'],
+      reply: 'Workshops and community access are free. Some deep-dive cohorts with live mentor review are capped in size to keep feedback fast.' },
+    { keys: ['experience', 'beginner', 'new', 'start', 'require', 'prerequisite'],
+      reply: 'No prior DevOps or AI experience needed. Each track starts from working fundamentals — you just need basic comfort with the command line and one programming language.' },
+    { keys: ['devops', 'tool', 'docker', 'kubernetes', 'terraform', 'jenkins', 'git'],
+      reply: 'On the DevOps side: Git and GitHub Actions, Jenkins and Argo CD, Docker and Kubernetes, Terraform and Ansible, Prometheus and Grafana, plus Trivy and OWASP ZAP for security. Around 70 tools in total.' },
+    { keys: ['cohort', 'when', 'next', 'join', 'start date', 'workshop'],
+      reply: 'The next live workshop is Thursday at 6:00 PM — debugging a broken CI pipeline, free to attend. Use "Join the next cohort" at the top to get matched into a working group.' },
+  ];
+
+  const FALLBACK = 'This demo only covers a few topics — try asking about tracks, AI tools, DevOps tools, time commitment, cost, or the next cohort.';
+
+  function answer(text) {
+    const q = text.toLowerCase();
+    const hit = SCRIPT.find((entry) => entry.keys.some((k) => q.includes(k)));
+    return hit ? hit.reply : FALLBACK;
+  }
+
+  function addBubble(text, who) {
+    const el = document.createElement('div');
+    el.className = `chat-bubble chat-${who}`;
+    el.textContent = text;
+    log.appendChild(el);
+    log.scrollTop = log.scrollHeight;
+    return el;
+  }
+
+  function respond(question) {
+    const typing = document.createElement('div');
+    typing.className = 'chat-bubble chat-bot typing';
+    typing.innerHTML = '<span></span><span></span><span></span>';
+    log.appendChild(typing);
+    log.scrollTop = log.scrollHeight;
+
+    setTimeout(() => {
+      typing.remove();
+      addBubble(answer(question), 'bot');
+    }, reduce ? 0 : 520);
+  }
+
+  function send(text) {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    addBubble(trimmed, 'user');
+    input.value = '';
+    respond(trimmed);
+  }
+
+  function setOpen(open) {
+    panel.classList.toggle('open', open);
+    launcher.setAttribute('aria-expanded', String(open));
+    iconOpen.classList.toggle('hidden', open);
+    iconClose.classList.toggle('hidden', !open);
+    if (open) input.focus();
+  }
+
+  launcher.addEventListener('click', () => setOpen(!panel.classList.contains('open')));
+  closeBtn.addEventListener('click', () => { setOpen(false); launcher.focus(); });
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    send(input.value);
+  });
+
+  document.getElementById('chat-suggestions').addEventListener('click', (e) => {
+    const btn = e.target.closest('.chat-suggest');
+    if (btn) send(btn.textContent);
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && panel.classList.contains('open')) {
+      setOpen(false);
+      launcher.focus();
+    }
+  });
+})();
+</script>
+
+<script>
+(() => {
+  const canvas = document.getElementById('bg-canvas');
+  const ctx = canvas.getContext('2d');
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const TEAL = [52, 214, 166];
+  const CYAN = [51, 217, 242];
+  const LINK_DIST = 168;
+
+  let w = 0, h = 0, dpr = 1, frame = 0, rafId = null;
+  let nodes = [];
+  let packets = [];
+
+  const rand = (a, b) => a + Math.random() * (b - a);
+  const mix = (t) => [
+    Math.round(TEAL[0] + (CYAN[0] - TEAL[0]) * t),
+    Math.round(TEAL[1] + (CYAN[1] - TEAL[1]) * t),
+    Math.round(TEAL[2] + (CYAN[2] - TEAL[2]) * t),
+  ];
+  const rgba = (c, a) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
+
+  function pickNeighbor(i) {
+    const a = nodes[i];
+    const near = [];
+    for (let j = 0; j < nodes.length; j++) {
+      if (j === i) continue;
+      if (Math.hypot(a.x - nodes[j].x, a.y - nodes[j].y) < LINK_DIST) near.push(j);
+    }
+    if (!near.length) return (i + 1) % nodes.length;
+    return near[(Math.random() * near.length) | 0];
+  }
+
+  function build() {
+    const count = Math.max(30, Math.min(92, Math.round((w * h) / 18000)));
+    nodes = Array.from({ length: count }, () => ({
+      x: Math.random() * w,
+      y: Math.random() * h,
+      vx: rand(-0.13, 0.13),
+      vy: rand(-0.09, 0.09),
+      r: rand(1, 2.2),
+      phase: Math.random() * Math.PI * 2,
+    }));
+    packets = Array.from({ length: Math.max(6, Math.round(count / 5)) }, () => {
+      const from = (Math.random() * nodes.length) | 0;
+      return { from, to: pickNeighbor(from), t: Math.random(), speed: rand(0.0035, 0.0075) };
+    });
+  }
+
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    w = window.innerWidth;
+    h = window.innerHeight;
+    canvas.width = Math.floor(w * dpr);
+    canvas.height = Math.floor(h * dpr);
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    build();
+  }
+
+  function update() {
+    for (const n of nodes) {
+      n.x += n.vx;
+      n.y += n.vy;
+      if (n.x < -24) n.x = w + 24; else if (n.x > w + 24) n.x = -24;
+      if (n.y < -24) n.y = h + 24; else if (n.y > h + 24) n.y = -24;
+    }
+    for (const p of packets) {
+      p.t += p.speed;
+      if (p.t >= 1) {
+        p.from = p.to;
+        p.to = pickNeighbor(p.from);
+        p.t = 0;
+      }
+    }
+  }
+
+  function draw() {
+    frame++;
+    ctx.clearRect(0, 0, w, h);
+
+    ctx.lineWidth = 1;
+    for (let i = 0; i < nodes.length; i++) {
+      const a = nodes[i];
+      for (let j = i + 1; j < nodes.length; j++) {
+        const b = nodes[j];
+        const d = Math.hypot(a.x - b.x, a.y - b.y);
+        if (d > LINK_DIST) continue;
+        ctx.strokeStyle = rgba(mix((a.x + b.x) / (2 * w)), (1 - d / LINK_DIST) * 0.3);
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.stroke();
+      }
+    }
+
+    for (const n of nodes) {
+      const pulse = reduce ? 1 : 0.72 + Math.sin(frame * 0.02 + n.phase) * 0.28;
+      const c = mix(n.x / w);
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, n.r * 3.4, 0, Math.PI * 2);
+      ctx.fillStyle = rgba(c, 0.09 * pulse);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+      ctx.fillStyle = rgba(c, 0.72 * pulse);
+      ctx.fill();
+    }
+
+    if (reduce) return;
+    for (const p of packets) {
+      const a = nodes[p.from], b = nodes[p.to];
+      if (!a || !b) continue;
+      const x = a.x + (b.x - a.x) * p.t;
+      const y = a.y + (b.y - a.y) * p.t;
+      const tail = Math.max(0, p.t - 0.2);
+      const c = mix(x / w);
+      ctx.strokeStyle = rgba(c, 0.45);
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.moveTo(a.x + (b.x - a.x) * tail, a.y + (b.y - a.y) * tail);
+      ctx.lineTo(x, y);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(x, y, 5.5, 0, Math.PI * 2);
+      ctx.fillStyle = rgba(c, 0.13);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(x, y, 2, 0, Math.PI * 2);
+      ctx.fillStyle = rgba(c, 0.92);
+      ctx.fill();
+    }
+  }
+
+  function loop() {
+    update();
+    draw();
+    rafId = requestAnimationFrame(loop);
+  }
+
+  let resizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(resize, 160);
+  });
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      cancelAnimationFrame(rafId);
+      rafId = null;
+    } else if (!reduce && rafId === null) {
+      loop();
+    }
+  });
+
+  resize();
+  if (reduce) draw(); else loop();
+})();
+</script>
+
+</body>
+</html>

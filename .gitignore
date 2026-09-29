@@ -1,0 +1,12 @@
+node_modules/
+
+# Local build/QA artifacts
+temporary screenshots/
+
+# Internal brand reference — not needed to deploy the site
+brand_assets/OpsMind_Guidelines.png
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+*.log
